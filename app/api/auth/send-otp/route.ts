@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import dbConnect from "../../../../models/page";
+import dbConnect from "@/models/page";
 import User from "../../../../models/schema/user";
 import nodemailer from "nodemailer";
 
@@ -38,9 +38,7 @@ export async function POST(req: NextRequest) {
 
     // Connect to database
     try {
-      console.log("Connecting to database...");
       await dbConnect.connectDB();
-      console.log("Database connected successfully");
     } catch (error) {
       console.error("Database connection error:", error);
       return NextResponse.json(
@@ -53,7 +51,6 @@ export async function POST(req: NextRequest) {
     console.log("Checking for existing user...");
     const existingUser = await User.findOne({ email });
     if (existingUser && existingUser.isVerified) {
-      console.log("User already exists and is verified");
       return NextResponse.json(
         { message: "Email already registered" },
         { status: 400 }
@@ -65,68 +62,45 @@ export async function POST(req: NextRequest) {
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
 
     // Store or update OTP
-    try {
-      console.log("Saving OTP...");
-      if (existingUser) {
-        existingUser.otp = otp;
-        existingUser.otpExpiry = otpExpiry;
-        await existingUser.save();
-      } else {
-        const tempUser = new User({
-          email,
-          otp,
-          otpExpiry,
-          // These will be updated after verification
-          name: "",
-          password: "",
-          isVerified: false
-        });
-        await tempUser.save();
-      }
-      console.log("OTP saved successfully");
-    } catch (error) {
-      console.error("Error saving user:", error);
-      return NextResponse.json(
-        { message: "Error saving user data" },
-        { status: 500 }
-      );
+    if (existingUser) {
+      existingUser.otp = otp;
+      existingUser.otpExpiry = otpExpiry;
+      await existingUser.save();
+    } else {
+      await User.create({
+        email,
+        otp,
+        otpExpiry,
+        isVerified: false
+      });
     }
 
-    // Create email transporter
-    console.log("Setting up email transporter...");
+    // Create email transporter with Resend SMTP settings
     const transporter = nodemailer.createTransport({
-      service: "Gmail",
+      host: 'smtp.resend.com',
+      port: '465',
+      secure: true,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
+        user: 'resend',
+        pass: process.env.EMAIL_PASS
+      }
     });
 
     // Send OTP email
-    try {
-      console.log("Sending email...");
-      await transporter.sendMail({
-        from: `"Auction App" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: "Your Verification Code",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>Email Verification</h2>
-            <p>Your verification code is:</p>
-            <h1 style="font-size: 32px; letter-spacing: 5px; color: #4CAF50;">${otp}</h1>
-            <p>This code will expire in 5 minutes.</p>
-            <p>If you didn't request this code, please ignore this email.</p>
-          </div>
-        `,
-      });
-      console.log("Email sent successfully");
-    } catch (error) {
-      console.error("Error sending email:", error);
-      return NextResponse.json(
-        { message: "Failed to send email" },
-        { status: 500 }
-      );
-    }
+    await transporter.sendMail({
+      from: "onboarding@resend.dev",
+      to: email,
+      subject: "Your Verification Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Email Verification</h2>
+          <p>Your verification code is:</p>
+          <h1 style="font-size: 32px; letter-spacing: 5px; color: #4CAF50;">${otp}</h1>
+          <p>This code will expire in 5 minutes.</p>
+          <p>If you didn't request this code, please ignore this email.</p>
+        </div>
+      `,
+    });
 
     return NextResponse.json(
       { message: "OTP sent successfully" },

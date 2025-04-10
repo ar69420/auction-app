@@ -6,8 +6,8 @@ import Message from './schema/message';
 // Database connection function
 const connectDB = async () => {
   try {
-    if (mongoose.connections[0].readyState) {
-      console.log('Using existing database connection');
+    if (mongoose.connection.readyState === 1) {
+      console.log('MongoDB already connected');
       return;
     }
 
@@ -18,6 +18,8 @@ const connectDB = async () => {
     await mongoose.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
     } as mongoose.ConnectOptions);
     
     console.log('MongoDB connection successful');

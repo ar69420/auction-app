@@ -1,7 +1,11 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, MongoClientOptions } from "mongodb";
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const options = {};
+const options: MongoClientOptions = {
+  connectTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+  maxPoolSize: 50,
+};
 
 if (!MONGODB_URI) {
   throw new Error("⚠️ MONGODB_URI is missing in .env.local!");
@@ -21,6 +25,7 @@ if (process.env.NODE_ENV === "development") {
     global._mongoClientPromise = client.connect();
   }
   clientPromise = global._mongoClientPromise;
+  console.log("MongoDB client promise initialized in development mode.");
 } else {
   client = new MongoClient(MONGODB_URI, options);
   clientPromise = client.connect();
