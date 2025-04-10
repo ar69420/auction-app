@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import dbConnect from "../../../../models/page";
+import dbConnect from "@/models/page";
 import User from "../../../../models/schema/user";
 import nodemailer from "nodemailer";
 
@@ -16,12 +16,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Connect to database
-    const { connectDB } = await dbConnect();
-    await connectDB();
+    try {
+      await dbConnect.connectDB();
+    } catch (error) {
+      console.error("Database connection error:", error);
+      return NextResponse.json(
+        { message: "Database connection failed" },
+        { status: 500 }
+      );
+    }
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
-    if (existingUser && existingUser.isverified) {
+    if (existingUser && existingUser.isVerified) {
       return NextResponse.json(
         { message: "Email already registered" },
         { status: 400 }
@@ -38,29 +45,28 @@ export async function POST(req: NextRequest) {
       existingUser.otpExpiry = otpExpiry;
       await existingUser.save();
     } else {
-      const tempUser = new User({
+      await User.create({
         email,
         otp,
         otpExpiry,
-        // These will be updated after verification
-        name: "",
-        password: "",
+        isVerified: false
       });
-      await tempUser.save();
     }
 
-    // Create email transporter
+    // Create email transporter with Resend SMTP settings
     const transporter = nodemailer.createTransport({
-      service: "Gmail",
+      host: 'smtp.resend.com',
+      port: '465',
+      secure: true,
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
+        user: 'resend',
+        pass: process.env.EMAIL_PASS
+      }
     });
 
     // Send OTP email
     await transporter.sendMail({
-      from: `"Auction App" <${process.env.EMAIL_USER}>`,
+      from: "onboarding@resend.dev",
       to: email,
       subject: "Your Verification Code",
       html: `

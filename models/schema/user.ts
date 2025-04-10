@@ -1,9 +1,9 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IUser extends Document {
-  name: string;
+  name?: string;
   email: string;
-  password: string;
+  password?: string;
   phone?: string;
   address?: string;
   isAdmin: boolean;
@@ -18,9 +18,9 @@ export interface IUser extends Document {
 
 const UserSchema: Schema<IUser> = new Schema(
   {
-    name: { type: String, required: true },
+    name: { type: String },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String },
     phone: { type: String },
     address: { type: String },
     isAdmin: { type: Boolean, default: false },
