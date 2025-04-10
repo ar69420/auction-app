@@ -1,17 +1,20 @@
+import { env } from "process";
 import dbConnect from "../../../../models/page"
 import User from "../../../../models/schema/user";
 import bcrypt from "bcryptjs";
-import nodemailer from "nodemailer";
+import nodeMailer from "nodemailer";
+
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
-
+  
   try {
+    
     const { name, email, password } = req.body;
-
-    // 1️⃣ Connect to the database
+    
+    
     await dbConnect();
 
     // 2️⃣ Check if the user already exists
@@ -20,13 +23,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "User already exists" });
     }
 
-    // 3️⃣ Hash the password
+   
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // 4️⃣ Generate a 6-digit OTP
+   
     const otp = Math.floor(100000 + Math.random() * 900000);
 
-    // 5️⃣ Create the user with `isVerified: false`
+   
     const newUser = await User.create({ 
       name, 
       email, 
@@ -35,8 +37,8 @@ export default async function handler(req, res) {
       isVerified: false 
     });
 
-    // 6️⃣ Send OTP via email
-    const transporter = nodemailer.createTransport({
+    
+    const transporter = nodeMailer.createTransport({
       service: "Gmail",
       auth: { 
         user: process.env.EMAIL_USER, 
