@@ -5,13 +5,34 @@ import nodemailer from "nodemailer";
 
 export async function POST(req: NextRequest) {
   try {
+    // Log the start of the request
+    console.log("Starting send-otp request...");
+
     const body = await req.json();
     const { email } = body;
 
     if (!email || typeof email !== "string") {
+      console.log("Invalid email format");
       return NextResponse.json(
         { message: "Email is required" },
         { status: 400 }
+      );
+    }
+
+    // Check environment variables
+    if (!process.env.MONGODB_URI) {
+      console.error("MONGODB_URI is not set");
+      return NextResponse.json(
+        { message: "Database configuration error" },
+        { status: 500 }
+      );
+    }
+
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error("Email credentials not set");
+      return NextResponse.json(
+        { message: "Email service not configured" },
+        { status: 500 }
       );
     }
 
@@ -27,6 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user exists
+    console.log("Checking for existing user...");
     const existingUser = await User.findOne({ email });
     if (existingUser && existingUser.isVerified) {
       return NextResponse.json(
@@ -85,9 +107,9 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error sending OTP:", error);
+    console.error("Error in send-otp endpoint:", error);
     return NextResponse.json(
-      { message: "Failed to send OTP" },
+      { message: "Internal server error" },
       { status: 500 }
     );
   }
