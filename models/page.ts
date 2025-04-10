@@ -13,13 +13,14 @@ const connectDB = async () => {
 
     // Use the connection string from .env file or fall back to default
     const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/auction-app';
-    const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/auction-app';
     console.log('Attempting to connect to MongoDB...');
     
     await mongoose.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-    });
+    } as mongoose.ConnectOptions);
     
     console.log('MongoDB connection successful');
   } catch (error) {
