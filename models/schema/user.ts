@@ -11,7 +11,9 @@ export interface IUser extends Document {
   products: Types.ObjectId[]; 
   messages: Types.ObjectId[]; 
   createdAt: Date;
-  isverified:boolean;
+  isVerified: boolean;
+  otp?: string;
+  otpExpiry?: Date;
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -23,7 +25,9 @@ const UserSchema: Schema<IUser> = new Schema(
     address: { type: String },
     isAdmin: { type: Boolean, default: false },
     balance: { type: Number, default: 0 }, 
-    isverified:{type: Boolean,default: false},
+    isVerified: { type: Boolean, default: false },
+    otp: { type: String },
+    otpExpiry: { type: Date },
     products: [{ type: Schema.Types.ObjectId, ref: "Product" }],
     messages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
   },

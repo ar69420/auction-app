@@ -16,15 +16,22 @@ export default function SignUp() {
 
   const sendOtp = async () => {
     setError("");
+  
     try {
-      const res = await fetch(`/api/auth/send-otp?email=${formData.email}`);
+      const res = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: formData.email }),
+      });
+  
       const data = await res.json();
-
+  
       if (!res.ok) {
         return setError(data.message || "Failed to send OTP");
       }
-
-      alert("OTP sent to your email. Please check your inbox.");
+  
       setOtpSent(true);
     } catch (err) {
       setError("Something went wrong while sending OTP");
@@ -34,15 +41,28 @@ export default function SignUp() {
   const verifyAndRegister = async () => {
     setError("");
     try {
-      const res = await fetch("/api/auth/register", {
+      // First verify the OTP
+      const verifyRes = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, otp }),
+        body: JSON.stringify({ email: formData.email, otp }),
       });
 
-      const data = await res.json();
+      if (!verifyRes.ok) {
+        const data = await verifyRes.json();
+        return setError(data.message || "OTP verification failed");
+      }
 
-      if (!res.ok) {
+      // If OTP is verified, proceed with registration
+      const registerRes = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await registerRes.json();
+
+      if (!registerRes.ok) {
         return setError(data.message || "Registration failed");
       }
 
