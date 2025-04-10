@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
 
     // Send OTP email
     await transporter.sendMail({
-      from: "onboarding@resend.dev",
+      from: "support@techpi.me",
       to: email,
       subject: "Your Verification Code",
       html: `
